@@ -5,7 +5,7 @@ import pandas as pd
 import time
 
 def init_browser():
-    executable_path = {"executable_path": "/Users/David W. Jones/class/chromedriver"}
+    executable_path = {"executable_path": "/usr/local/bin/chromedriver"}
     return Browser("chrome", **executable_path, headless=False)
 
 def scrape():
@@ -86,22 +86,33 @@ def scrape():
     soup = BeautifulSoup(html, 'html.parser')
     mars_hemis=[]
 
+
+
+    # find all items with hemisphere info
+    hemispheres = soup.find_all('div', class_='description')
+
     import time
-    for i in range (4):
+    for hemis in hemispheres:
 
         time.sleep(1)
-        images = browser.find_by_tag('h3')
-        images[i].click()
+        # find the title
+        img_title = hemis.find("h3").text
+        # find link for origin img
+        partial = hemis.find('a', class_='itemLink product-item')["href"]
+        hemis_link = 'https://astrogeology.usgs.gov'+ partial
+
+        browser.visit(hemis_link)
         html = browser.html
         soup = BeautifulSoup(html, 'html.parser')
-        partial = soup.find("img", class_="wide-image")["src"]
-        img_title = soup.find("h2",class_="title").text
-        img_url = 'https://astrogeology.usgs.gov'+ partial
+
+        img_url = soup.find('div', class_='downloads').find('ul').find('li').find('a')['href']
         dictionary={"title":img_title,"img_url":img_url}
         mars_hemis.append(dictionary)
         browser.back()
     
-    mars_data['mars_hemis'] = mars_hemis
+    mars_data["mars_hemis"] = mars_hemis
+
+    browser.quit()
     # Return the dictionary
     return mars_data
 
